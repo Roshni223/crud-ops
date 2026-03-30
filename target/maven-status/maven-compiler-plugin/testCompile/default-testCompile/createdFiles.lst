@@ -1,0 +1,5 @@
+com/spring/crud/demo/StudentControllerTest.class
+com/spring/crud/demo/StudentJpaTest.class
+com/spring/crud/demo/config/error/CustomExceptionTest.class
+com/spring/crud/demo/EmployeeServiceTest.class
+com/spring/crud/demo/SpringBootH2CRUDApplicationTest.class
