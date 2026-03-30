@@ -2,11 +2,12 @@ pipeline {
     agent any
 
     environment {
-        JAR_NAME    = "crud-ops-0.0.1-SNAPSHOT.jar"
-        EC2_USER    = "ubuntu"
-        EC2_HOST    = "13.51.206.53"
-        DEPLOY_DIR  = "/home/ubuntu/app"
-        JAVA_OPTS   = "-Xms256m -Xmx512m"
+        JAR_NAME   = "crud-ops-0.0.1-SNAPSHOT.jar"
+        EC2_USER   = "ubuntu"
+        EC2_HOST   = "13.51.206.53"
+        DEPLOY_DIR = "/home/ubuntu/app"
+        JAVA_OPTS  = "-Xms256m -Xmx512m"
+        MAVEN_OPTS = "-Dmaven.repo.local=/var/lib/jenkins/.m2/repository"
     }
 
     tools {
@@ -17,13 +18,13 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh 'mvn clean package -DskipTests'
+                sh 'mvn clean package -DskipTests $MAVEN_OPTS'
             }
         }
 
         stage('Test') {
             steps {
-                sh 'mvn test'
+                sh 'mvn test $MAVEN_OPTS'
             }
         }
 
@@ -31,7 +32,8 @@ pipeline {
             steps {
                 sshagent(['ec2-ssh-key']) {
                     sh """
-                        ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} 'mkdir -p ${DEPLOY_DIR}'
+                        ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} \
+                            'mkdir -p ${DEPLOY_DIR}'
 
                         scp -o StrictHostKeyChecking=no \
                             target/${JAR_NAME} \
@@ -52,11 +54,7 @@ pipeline {
     }
 
     post {
-        success {
-            echo '✅ Deployment successful!'
-        }
-        failure {
-            echo '❌ Deployment failed. Check logs.'
-        }
+        success { echo '✅ Deployment successful!' }
+        failure { echo '❌ Deployment failed. Check logs.' }
     }
 }
