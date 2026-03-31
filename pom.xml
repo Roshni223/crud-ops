@@ -6,8 +6,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.3.2.RELEASE</version>
-        <relativePath/> <!-- lookup parent from repository -->
+        <version>2.7.18</version>
     </parent>
     <groupId>com.spring.crud.demo</groupId>
     <artifactId>sample-spring-boot-crud-example-with-h2</artifactId>
@@ -46,11 +45,16 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-ui</artifactId>
-            <version>1.4.4</version>
+            <version>1.6.15</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.classgraph</groupId>
+            <artifactId>classgraph</artifactId>
+            <version>4.8.162</version> <!-- or latest -->
         </dependency>
         <dependency>
             <groupId>io.projectreactor</groupId>
@@ -76,7 +80,7 @@
            </snapshots>
         </repository>
 	</repositories>
- 
+
  <!-- only for Azure DevOps - Used the below tag for feeds -->
   <distributionManagement>
     <repository>
