@@ -37,15 +37,15 @@ pipeline {
                     APP_DIR=${DEPLOY_DIR}
                     JAR=${JAR_NAME}
 
-                    if lsof -i:8080 > /dev/null; then
-                        CURRENT_PORT=8080
-                        NEW_PORT=8081
-                    elif lsof -i:8081 > /dev/null; then
-                        CURRENT_PORT=8081
-                        NEW_PORT=8080
+                    if lsof -i:9010 > /dev/null; then
+                        CURRENT_PORT=9010
+                        NEW_PORT=9011
+                    elif lsof -i:9011 > /dev/null; then
+                        CURRENT_PORT=9011
+                        NEW_PORT=9010
                     else
-                        CURRENT_PORT=8081
-                        NEW_PORT=8080
+                        CURRENT_PORT=9011
+                        NEW_PORT=9010
                     fi
 
                     echo "Current port: \$CURRENT_PORT"
