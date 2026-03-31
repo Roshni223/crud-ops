@@ -27,27 +27,54 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
+        stage('Zero Downtime Deploy') {
             steps {
                 sshagent(['ec2-ssh-key']) {
                     sh """
-                        # 1. Ensure directory exists
-                        ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} "mkdir -p ${DEPLOY_DIR}"
+                        # Copy JAR
+                        scp target/${JAR_NAME} ${EC2_USER}@${EC2_HOST}:${DEPLOY_DIR}/${JAR_NAME}
 
-                        # 2. Copy the JAR
-                        scp -o StrictHostKeyChecking=no target/${JAR_NAME} ${EC2_USER}@${EC2_HOST}:${DEPLOY_DIR}/${JAR_NAME}
+                        ssh ${EC2_USER}@${EC2_HOST} << 'EOF'
 
-                        # 3. Use a Here-Doc to run the remote commands
-                        ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} << 'EOF'
-                            echo "Stopping old process..."
-                            pkill -f "${JAR_NAME}" || true
+                        APP_DIR=${DEPLOY_DIR}
+                        JAR=${JAR_NAME}
 
-                            echo "Starting new process..."
-                            nohup java ${JAVA_OPTS} -jar ${DEPLOY_DIR}/${JAR_NAME} > ${DEPLOY_DIR}/app.log 2>&1 &
+                        # Detect running port
+                        if lsof -i:8080 > /dev/null; then
+                            CURRENT_PORT=8080
+                            NEW_PORT=8081
+                        elif lsof -i:8081 > /dev/null; then
+                            CURRENT_PORT=8081
+                            NEW_PORT=8080
+                        else
+                            CURRENT_PORT=8081
+                            NEW_PORT=8080
+                        fi
 
+                        echo "Current port: \$CURRENT_PORT"
+                        echo "Deploying to: \$NEW_PORT"
+
+                        # Start new version
+                        nohup java -Xms256m -Xmx512m -jar \$APP_DIR/\$JAR \
+                            --server.port=\$NEW_PORT \
+                            > \$APP_DIR/app_\$NEW_PORT.log 2>&1 &
+
+                        # Wait + health check
+                        for i in {1..10}; do
+                            curl -f http://localhost:\$NEW_PORT/students/health && break
                             sleep 2
-                            exit
-        EOF
+                        done
+
+                        # Switch Nginx
+                        sudo sed -i "s/127.0.0.1:\$CURRENT_PORT/127.0.0.1:\$NEW_PORT/" /etc/nginx/sites-available/default
+                        sudo systemctl reload nginx
+
+                        # Stop old app
+                        pkill -f "server.port=\$CURRENT_PORT" || true
+
+                        echo "Deployment successful: switched to port \$NEW_PORT"
+
+                        EOF
                     """
                 }
             }

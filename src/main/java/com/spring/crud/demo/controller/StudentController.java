@@ -66,6 +66,10 @@ public class StudentController {
         studentList.items = studentService.getStudentByCondition(student);
         return studentList;
     }
+    @GetMapping("/health")
+    public String health() {
+        return "OK";
+    }
 }
 
 
