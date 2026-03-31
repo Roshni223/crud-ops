@@ -31,18 +31,14 @@ pipeline {
             steps {
                 sshagent(['ec2-ssh-key']) {
                     sh """
-                        ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} \
-                        'mkdir -p ${DEPLOY_DIR}'
+                        ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} 'mkdir -p ${DEPLOY_DIR}'
 
-                        scp target/${JAR_NAME} \
-                        ${EC2_USER}@${EC2_HOST}:${DEPLOY_DIR}/${JAR_NAME}
+                        scp target/${JAR_NAME} ${EC2_USER}@${EC2_HOST}:${DEPLOY_DIR}/${JAR_NAME}
 
                         ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} '
                             pkill -f "${JAR_NAME}" || true
                             sleep 2
-                            nohup java ${JAVA_OPTS} \
-                            -jar ${DEPLOY_DIR}/${JAR_NAME} \
-                            > ${DEPLOY_DIR}/app.log 2>&1 &
+                            nohup java ${JAVA_OPTS} -jar ${DEPLOY_DIR}/${JAR_NAME} > ${DEPLOY_DIR}/app.log 2>&1 &
                         '
                     """
                 }
