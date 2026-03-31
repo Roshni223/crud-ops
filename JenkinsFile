@@ -37,14 +37,17 @@ pipeline {
                         # 2. Copy the JAR
                         scp -o StrictHostKeyChecking=no target/${JAR_NAME} ${EC2_USER}@${EC2_HOST}:${DEPLOY_DIR}/${JAR_NAME}
 
-                        # 3. Stop old process and start new one
-                        ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} "
-                            pkill -f '${JAR_NAME}' || true
-                            sleep 2
+                        # 3. Use a Here-Doc to run the remote commands
+                        ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} << 'EOF'
+                            echo "Stopping old process..."
+                            pkill -f "${JAR_NAME}" || true
+
+                            echo "Starting new process..."
                             nohup java ${JAVA_OPTS} -jar ${DEPLOY_DIR}/${JAR_NAME} > ${DEPLOY_DIR}/app.log 2>&1 &
-                            sleep 5
-                            disown
-                        "
+
+                            sleep 2
+                            exit
+        EOF
                     """
                 }
             }
