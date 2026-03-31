@@ -1,8 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.spring.crud.demo.EmployeeServiceTest
--------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.032 s <<< FAILURE! - in com.spring.crud.demo.EmployeeServiceTest
-addEmployTest  Time elapsed: 0.032 s  <<< ERROR!
-java.lang.NullPointerException
-	at com.spring.crud.demo.EmployeeServiceTest.addEmployTest(EmployeeServiceTest.java:28)
-

@@ -1,0 +1,26 @@
+# Compiled class file
+target/
+*.class
+
+# Log files
+*.log
+
+# Package Files
+*.jar
+*.war
+*.ear
+
+# Virtual machine crash logs
+hs_err_pid*
+
+# IDE specific files
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+bin/
+
+# OS specific files
+.DS_Store
+Thumbs.db
