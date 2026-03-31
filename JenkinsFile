@@ -31,50 +31,42 @@ pipeline {
             steps {
                 sshagent(['ec2-ssh-key']) {
                     sh """
-                        # Copy JAR
-                        scp target/${JAR_NAME} ${EC2_USER}@${EC2_HOST}:${DEPLOY_DIR}/${JAR_NAME}
+                    scp target/${JAR_NAME} ${EC2_USER}@${EC2_HOST}:${DEPLOY_DIR}/${JAR_NAME}
 
-                        ssh ${EC2_USER}@${EC2_HOST} << 'EOF'
+                    ssh ${EC2_USER}@${EC2_HOST} << 'EOF'
+                    APP_DIR=${DEPLOY_DIR}
+                    JAR=${JAR_NAME}
 
-                        APP_DIR=${DEPLOY_DIR}
-                        JAR=${JAR_NAME}
+                    if lsof -i:8080 > /dev/null; then
+                        CURRENT_PORT=8080
+                        NEW_PORT=8081
+                    elif lsof -i:8081 > /dev/null; then
+                        CURRENT_PORT=8081
+                        NEW_PORT=8080
+                    else
+                        CURRENT_PORT=8081
+                        NEW_PORT=8080
+                    fi
 
-                        # Detect running port
-                        if lsof -i:8080 > /dev/null; then
-                            CURRENT_PORT=8080
-                            NEW_PORT=8081
-                        elif lsof -i:8081 > /dev/null; then
-                            CURRENT_PORT=8081
-                            NEW_PORT=8080
-                        else
-                            CURRENT_PORT=8081
-                            NEW_PORT=8080
-                        fi
+                    echo "Current port: \$CURRENT_PORT"
+                    echo "Deploying to: \$NEW_PORT"
 
-                        echo "Current port: \$CURRENT_PORT"
-                        echo "Deploying to: \$NEW_PORT"
+                    nohup java -Xms256m -Xmx512m -jar \$APP_DIR/\$JAR \
+                        --server.port=\$NEW_PORT \
+                        > \$APP_DIR/app_\$NEW_PORT.log 2>&1 &
 
-                        # Start new version
-                        nohup java -Xms256m -Xmx512m -jar \$APP_DIR/\$JAR \
-                            --server.port=\$NEW_PORT \
-                            > \$APP_DIR/app_\$NEW_PORT.log 2>&1 &
+                    for i in {1..10}; do
+                        curl -f http://localhost:\$NEW_PORT/health && break
+                        sleep 2
+                    done
 
-                        # Wait + health check
-                        for i in {1..10}; do
-                            curl -f http://localhost:\$NEW_PORT/students/health && break
-                            sleep 2
-                        done
+                    sudo sed -i "s/127.0.0.1:\$CURRENT_PORT/127.0.0.1:\$NEW_PORT/" /etc/nginx/sites-available/default
+                    sudo systemctl reload nginx
 
-                        # Switch Nginx
-                        sudo sed -i "s/127.0.0.1:\$CURRENT_PORT/127.0.0.1:\$NEW_PORT/" /etc/nginx/sites-available/default
-                        sudo systemctl reload nginx
+                    pkill -f "server.port=\$CURRENT_PORT" || true
 
-                        # Stop old app
-                        pkill -f "server.port=\$CURRENT_PORT" || true
-
-                        echo "Deployment successful: switched to port \$NEW_PORT"
-
-                        EOF
+                    echo "Deployment successful: switched to port \$NEW_PORT"
+                    EOF
                     """
                 }
             }
